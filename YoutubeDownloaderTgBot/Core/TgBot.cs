@@ -53,7 +53,7 @@ namespace YoutubeDownloaderTgBot.Core
             _botClient.OnMessage += OnMessage;
             var me = await _botClient.GetMe();
 
-            Console.WriteLine($"@{me.Username} is running... Press Enter to terminate");
+            Util.Log($"@{me.Username} is running... Press Enter to terminate");
             Console.ReadLine();
 
             _cts.Cancel();
@@ -64,7 +64,7 @@ namespace YoutubeDownloaderTgBot.Core
             try
             {
                 if (msg.Text is null) return;   // we only handle Text messages here
-                Console.WriteLine($"Received {type} '{msg.Text}' in {msg.Chat}");
+                Util.Log($"Received {type} '{msg.Text}' in {msg.Chat}");
                 // let's echo back received text in the chat
 
                 var message = msg.Text;
@@ -148,17 +148,17 @@ namespace YoutubeDownloaderTgBot.Core
 
         private async Task DownloadAudio(Message msg, string url)
         {
+            var videoInfo = await _ytdl.RunVideoDataFetch(url);
             await _botClient.SendMessage(msg.Chat.Id, $"Скачивание аудио: {url}");
             var resAudio = await _download.DownloadAudio(url, options);
             if (resAudio.Success)
             {
-                var videoInfo = await _ytdl.RunVideoDataFetch(url);
                 string videoPath = resAudio.Data;
                 Util.Log($"Аудио установлено: {videoPath}");
 
                 using (var stream = new FileStream(resAudio.Data, FileMode.Open, FileAccess.Read))
                 {
-                    var inputFile = InputFile.FromStream(stream, $"{videoInfo.Data.AltTitle}.mp3");
+                    var inputFile = InputFile.FromStream(stream, $"{videoInfo.Data.Title}.mp3");
                     await _botClient.SendAudio(msg.Chat.Id, inputFile);
                     Util.Log($"Аудио отправлено: {msg.Chat.Id}");
                 }
